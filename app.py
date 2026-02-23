@@ -32,7 +32,7 @@ def _get_base64_image(path: str) -> str:
 def apply_styles():
     """背景画像・全体CSS・タイトルバーCSSを適用する"""
     try:
-        img_b64 = _get_base64_image("./assets/kawaii_kokkusan_background_1600x900.jpg")
+        img_b64 = _get_base64_image("./assets/kawaii_kokkusan_background_napkin_1600x900.jpg")
         bg_css = f"url('data:image/jpeg;base64,{img_b64}')"
     except Exception:
         bg_css = "none"
@@ -144,11 +144,36 @@ def apply_styles():
     }}
 
     /* ── st.container(border=True) のパネルスタイル上書き ── */
-    [data-testid="stVerticalBlockBorderWrapper"] > div {{
+    /* Streamlitのcontainerはネストが深いので複数セレクタで対応 */
+    [data-testid="stVerticalBlockBorderWrapper"] {{
         background: rgba(255, 255, 255, 0.84) !important;
         border: 1px solid rgba(232,201,122,0.7) !important;
         border-radius: 12px !important;
         box-shadow: 0 2px 10px rgba(160,120,30,0.10) !important;
+    }}
+    [data-testid="stVerticalBlockBorderWrapper"] > div {{
+        background: transparent !important;
+    }}
+    /* emotion cacheクラスに直接当てるフォールバック */
+    div[data-testid="stVerticalBlock"] + div[data-testid="stVerticalBlockBorderWrapper"],
+    div[class*="stVerticalBlockBorderWrapper"] {{
+        background: rgba(255, 255, 255, 0.84) !important;
+        border: 1px solid rgba(232,201,122,0.7) !important;
+        border-radius: 12px !important;
+    }}
+
+    /* ── コードブロック（シェアテキスト）を明るく ── */
+    .stCode, .stCode > div, [data-testid="stCode"],
+    [data-testid="stCode"] > div,
+    pre, pre > code {{
+        background: rgba(255, 248, 225, 0.95) !important;
+        color: #3d2600 !important;
+        border: 1px solid #e8c97a !important;
+        border-radius: 8px !important;
+    }}
+    /* コードブロック内のコピーボタン */ 
+    [data-testid="stCode"] button {{
+        color: #7a4f10 !important;
     }}
 
     /* ── 全テキスト要素の文字色（ダークモード上書き） ── */
