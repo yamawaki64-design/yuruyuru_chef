@@ -21,6 +21,278 @@ st.set_page_config(
 )
 
 # ────────────────────────────
+# CSS・背景・UI共通関数
+# ────────────────────────────
+import base64
+
+def _get_base64_image(path: str) -> str:
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+def apply_styles():
+    """背景画像・全体CSS・タイトルバーCSSを適用する"""
+    try:
+        img_b64 = _get_base64_image("./assets/kawaii_kokkusan_background_1600x900.jpg")
+        bg_css = f"url('data:image/jpeg;base64,{img_b64}')"
+    except Exception:
+        bg_css = "none"
+
+    st.markdown(f"""
+    <style>
+    /* ── リセット・背景 ── */
+    .stApp {{
+        background-image: {bg_css};
+        background-size: cover;
+        background-attachment: fixed;
+        background-position: center;
+    }}
+
+    /* ── Streamlitデフォルトのヘッダー余白を詰める ── */
+    #root > div:first-child {{
+        padding-top: 0 !important;
+    }}
+
+    /* ── メインコンテンツをタイトルバー分下げる ── */
+    .main .block-container {{
+        padding-top: 3.8rem !important;
+        max-width: 680px;
+    }}
+
+    /* ── 固定タイトルバー ── */
+    .yuru-titlebar {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 9999;
+        background: rgba(255, 248, 225, 0.92);
+        backdrop-filter: blur(6px);
+        border-bottom: 2px solid #e8c97a;
+        padding: 0.45rem 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 2px 8px rgba(180,140,40,0.13);
+    }}
+    .yuru-titlebar-icon {{
+        font-size: 1.2rem;
+        line-height: 1;
+    }}
+    .yuru-titlebar-text {{
+        font-size: 1rem;
+        font-weight: bold;
+        color: #7a4f10;
+        letter-spacing: 0.04em;
+    }}
+
+    /* ── コンテンツパネル（書類感） ── */
+    .yuru-panel {{
+        background: rgba(255, 255, 255, 0.82);
+        border-radius: 12px;
+        padding: 1.1rem 1.3rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 10px rgba(160,120,30,0.10);
+        border: 1px solid rgba(232,201,122,0.5);
+        color: #3d2600;
+    }}
+
+    /* ── ふきだし（コックさんセリフ） ── */
+    .yuru-bubble {{
+        background: #fff8e1;
+        border: 2px solid #e8c97a;
+        border-radius: 16px 16px 16px 4px;
+        padding: 0.9rem 1.1rem;
+        margin-bottom: 1rem;
+        position: relative;
+        color: #5c3d0e;
+        font-size: 1rem;
+        line-height: 1.7;
+        box-shadow: 0 2px 8px rgba(180,140,40,0.10);
+    }}
+    .yuru-bubble::before {{
+        content: "🍳";
+        position: absolute;
+        top: -1.1rem;
+        left: 0.6rem;
+        font-size: 1.4rem;
+    }}
+
+    /* ── セクション見出し ── */
+    .yuru-section-label {{
+        font-size: 0.78rem;
+        font-weight: bold;
+        color: #a0700a;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.3rem;
+        padding-left: 0.1rem;
+    }}
+
+    /* ── 料理名ビッグテキスト ── */
+    .yuru-recipe-name {{
+        font-size: 1.35rem;
+        font-weight: bold;
+        color: #5c3d0e;
+        line-height: 1.5;
+        margin: 0.3rem 0 0.2rem 0;
+    }}
+
+    /* ── 道具注記 ── */
+    .yuru-tool-note {{
+        font-size: 0.85rem;
+        color: #c0732a;
+        margin-top: 0.2rem;
+    }}
+
+    /* ── タイピングアニメーション ── */
+    .yuru-typing {{
+        display: inline-block;
+        overflow: hidden;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: #5c3d0e;
+        font-size: 1rem;
+        line-height: 1.7;
+    }}
+
+    /* ── ボタン系 ── */
+    .stButton > button[kind="primary"] {{
+        background-color: #e8a020 !important;
+        border-color: #e8a020 !important;
+        color: white !important;
+        border-radius: 10px !important;
+        font-weight: bold !important;
+    }}
+    .stButton > button[kind="primary"]:hover {{
+        background-color: #cf8c18 !important;
+        border-color: #cf8c18 !important;
+    }}
+    .stButton > button:not([kind="primary"]) {{
+        background-color: rgba(255,255,255,0.75) !important;
+        border: 1.5px solid #d4a84b !important;
+        color: #7a4f10 !important;
+        border-radius: 10px !important;
+    }}
+
+    /* ── Streamlit標準h1/h2/h3を非表示（タイトルバーで代替） ── */
+    h1 {{ display: none !important; }}
+
+    /* ── プログレスバー色 ── */
+    .stProgress > div > div > div > div {{
+        background-color: #e8a020 !important;
+    }}
+
+    /* ── テキストエリア・ラジオ・チェックボックス ── */
+    .stTextArea textarea {{
+        background: rgba(255,255,255,0.85) !important;
+        border: 1.5px solid #d4a84b !important;
+        border-radius: 8px !important;
+        color: #3d2600 !important;
+    }}
+    .stRadio label, .stCheckbox label {{
+        color: #5c3d0e !important;
+    }}
+
+    /* ── divider ── */
+    hr {{
+        border-color: rgba(232,201,122,0.4) !important;
+    }}
+
+    /* ── モバイル（iPhone SE対応） ── */
+    @media (max-width: 420px) {{
+        .main .block-container {{
+            padding-top: 3.4rem !important;
+            padding-left: 0.7rem !important;
+            padding-right: 0.7rem !important;
+        }}
+        .yuru-titlebar {{
+            padding: 0.35rem 0.8rem;
+        }}
+        .yuru-titlebar-text {{
+            font-size: 0.9rem;
+        }}
+        .yuru-bubble {{
+            font-size: 0.93rem;
+            padding: 0.75rem 0.9rem;
+        }}
+        .yuru-panel {{
+            padding: 0.85rem 0.95rem;
+        }}
+        .yuru-recipe-name {{
+            font-size: 1.15rem;
+        }}
+        .stButton > button {{
+            font-size: 0.92rem !important;
+        }}
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def show_titlebar(title: str):
+    """固定タイトルバーを表示する"""
+    st.markdown(f"""
+    <div class="yuru-titlebar">
+        <span class="yuru-titlebar-icon">🍳</span>
+        <span class="yuru-titlebar-text">{title}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def bubble(text: str):
+    """コックさんのふきだしセリフを表示する"""
+    # XSS対策：改行を<br>に変換しつつそのまま表示（Groq出力なので信頼済み）
+    safe_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+    st.markdown(f'<div class="yuru-bubble">{safe_text}</div>', unsafe_allow_html=True)
+
+
+def panel_open():
+    """書類パネルを開く"""
+    st.markdown('<div class="yuru-panel">', unsafe_allow_html=True)
+
+
+def panel_close():
+    """書類パネルを閉じる"""
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+def section_label(text: str):
+    """パネル内のセクション見出し"""
+    st.markdown(f'<div class="yuru-section-label">{text}</div>', unsafe_allow_html=True)
+
+
+def typing_animation(text: str, speed_ms: int = 30):
+    """タイピングアニメーションでテキストを表示する（JavaScript）"""
+    safe_text = text.replace("\\", "\\\\").replace("`", "\\`").replace("$", "\\$")
+    uid = f"typing_{random.randint(10000, 99999)}"
+    st.components.v1.html(f"""
+    <div id="{uid}" style="
+        font-size: 1rem;
+        color: #5c3d0e;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        word-break: break-all;
+        min-height: 1.5em;
+        font-family: inherit;
+    "></div>
+    <script>
+    (function() {{
+        const el = document.getElementById('{uid}');
+        const text = `{safe_text}`;
+        let i = 0;
+        function type() {{
+            if (i < text.length) {{
+                el.textContent += text[i++];
+                setTimeout(type, {speed_ms});
+            }}
+        }}
+        type();
+    }})();
+    </script>
+    """, height=80)
+
+
+# ────────────────────────────
 # 定数
 # ────────────────────────────
 CHROMA_DIR = "./chroma_db"
@@ -512,6 +784,11 @@ def build_recipe_name(recipe: dict, found_ingredients: list,
 
 
 # ────────────────────────────
+# スタイル適用（全画面共通・最初に1回）
+# ────────────────────────────
+apply_styles()
+
+# ────────────────────────────
 # セッション初期化
 # ────────────────────────────
 def init_session():
@@ -540,17 +817,21 @@ def init_session():
 # 画面①：トップ
 # ────────────────────────────
 def show_top():
-    st.title("ゆるゆるコックさん 🍳")
-    st.write("手元の食材を教えてくれたら、何か作れるか考えるぞい！")
-    st.divider()
+    show_titlebar("ゆるゆるコックさん")
 
+    bubble("手元の食材を教えてくれたら、何か作れるか考えるぞい！")
+
+    panel_open()
+    section_label("今ある食材")
     user_input = st.text_area(
         "今ある食材を教えてほしいぞい",
         placeholder="例：卵、ご飯、ねぎ、残り物のハム",
-        height=120,
+        height=110,
+        label_visibility="collapsed",
     )
 
-    st.write("**温度はどうするぞい？**")
+    st.write("")
+    section_label("温度はどうするぞい？")
     temperature = st.radio(
         label="温度",
         options=["あったかいのがいい", "どっちでもいい"],
@@ -559,20 +840,20 @@ def show_top():
         horizontal=True,
     )
 
-    st.write("**使える道具はあるかぞい？**")
+    st.write("")
+    section_label("使える道具はあるかぞい？")
     col1, col2 = st.columns(2)
     with col1:
         has_stove = st.checkbox("コンロ")
     with col2:
         has_microwave = st.checkbox("電子レンジ")
+    panel_close()
 
     tools = []
     if has_stove:
         tools.append("コンロ")
     if has_microwave:
         tools.append("電子レンジ")
-
-    st.divider()
 
     button_disabled = not user_input.strip()
     if st.button(
@@ -663,40 +944,37 @@ def show_top():
 # 画面②-a：解析＋命名（成功版）
 # ────────────────────────────
 def show_analyze():
+    show_titlebar("メニューを決めるぞい")
+
     recipe = st.session_state.selected_recipe
     recipe_name = st.session_state.recipe_name
     match_rate = st.session_state.match_rate
     found_ingredients = st.session_state.found_ingredients
     analyze_message = st.session_state.groq_analyze_message
 
-    st.title("ゆるゆるコックさん 🍳")
-
-    # ─── 食材解析セリフ（Groqあり→Groq / なし→テンプレ）───
+    # ─── 食材解析セリフ（ふきだし）───
     if analyze_message:
-        st.write(analyze_message)
+        bubble(analyze_message)
     else:
         found_names = "と".join([ing["食材名"] for ing in found_ingredients]) if found_ingredients else "いろいろ"
-        st.write(f"「{found_names}」があるんだぞい。ちょっと考えてみるぞい…")
+        bubble(f"「{found_names}」があるんだぞい。ちょっと考えてみるぞい…")
 
-    st.divider()
-
-    # ─── 命名 ───
-    st.subheader(f"{recipe_name}が作れそうだぞい！")
-    # 道具の状況に応じておせっかいな一言を追加
+    # ─── 命名＋一致率パネル ───
+    panel_open()
+    section_label("おすすめメニュー")
+    st.markdown(f'<div class="yuru-recipe-name">✨ {recipe_name}が作れそうだぞい！</div>', unsafe_allow_html=True)
     if recipe.get("道具なし"):
-        st.caption("（加熱器具がないぞい。誰かにレンチンとかさせてもらうんだぞい。生はダメだぞい！）")
+        st.markdown('<div class="yuru-tool-note">⚠️ 加熱器具がないぞい。誰かにレンチンとかさせてもらうんだぞい。生はダメだぞい！</div>', unsafe_allow_html=True)
     elif recipe.get("レンジ代用"):
-        st.caption("（レンジでなんとかするぞい！）")
+        st.markdown('<div class="yuru-tool-note">💡 レンジでなんとかするぞい！</div>', unsafe_allow_html=True)
 
-    # ─── 一致率メーター ───
-    st.write("**一致率**")
+    st.write("")
+    section_label("食材一致率")
     st.progress(match_rate / 100)
     st.caption(f"{match_rate}% ー 調理しようとした気持ちも込みだぞい！")
-
-    st.divider()
+    panel_close()
 
     if st.button("詳しく教えてほしいぞい →", use_container_width=True, type="primary"):
-        # 詳細画面に進む前に調理手順セリフをGroqで生成
         with st.spinner("作り方を考え中だぞい…"):
             cooking_message = groq_cooking_steps(recipe, st.session_state.get("groq_normalized_words", []))
         st.session_state.groq_cooking_message = cooking_message
@@ -708,16 +986,15 @@ def show_analyze():
 # 画面②-a：解析＋命名（救済版）
 # ────────────────────────────
 def show_analyze_rescue():
-    st.title("ゆるゆるコックさん 🍳")
+    show_titlebar("降参だぞい")
 
-    st.write("うーん、いいのが思い浮かばなかったぞい。ごめんなさい。")
+    bubble("うーん、いいのが思い浮かばなかったぞい。ごめんなさい。")
 
-    st.divider()
-
+    panel_open()
+    section_label("買い物アドバイスだぞい 💡")
     advice = random.choice(SHOPPING_ADVICE)
-    st.info(f"💡 {advice}")
-
-    st.divider()
+    st.write(advice)
+    panel_close()
 
     if st.button("次へ →", use_container_width=True):
         st.session_state.screen = "farewell_rescue"
@@ -728,19 +1005,16 @@ def show_analyze_rescue():
 # 画面②-b：詳細説明
 # ────────────────────────────
 def show_detail():
+    show_titlebar("作り方を教えるぞい")
+
     recipe = st.session_state.selected_recipe
     found_ingredients = st.session_state.found_ingredients
     recipe_name = st.session_state.recipe_name
     cooking_message = st.session_state.groq_cooking_message
-    # Groq正規化リストがあればそちらを使う（ChromaDB検索混入防止）
     groq_words = st.session_state.get("groq_normalized_words", [])
 
-    st.title("ゆるゆるコックさん 🍳")
-
-    # ─── 食材の仕分けセリフ ───
+    # ─── 食材の仕分け ───
     real_ingredients = set(recipe["本物の食材"])
-
-    # ユーザーが実際に入力した食材：Groq正規化リストを優先
     if groq_words:
         user_names = set(groq_words)
     else:
@@ -748,20 +1022,24 @@ def show_detail():
 
     missing = real_ingredients - user_names
     substitutes = user_names - real_ingredients
-    unused_candidates = user_names - real_ingredients - substitutes  # 通常は空
 
-    if missing:
+    # ふきだし：食材の仕分けセリフ
+    if missing and substitutes:
         missing_str = "と".join(missing)
-        st.write(f"本物は{missing_str}が入るらしいけど、これもきっとおいしいぞい！")
-
-    if substitutes:
         sub_str = "と".join(substitutes)
-        st.write(f"{sub_str}は今回の{recipe['name']}には入らないやつだけど、いい仕事してくれるぞい！")
+        bubble(f"本物は{missing_str}が入るらしいけど、{sub_str}がいい仕事してくれるぞい！")
+    elif missing:
+        missing_str = "と".join(missing)
+        bubble(f"本物は{missing_str}が入るらしいけど、これもきっとおいしいぞい！")
+    elif substitutes:
+        sub_str = "と".join(substitutes)
+        bubble(f"{sub_str}は{recipe['name']}には入らないやつだけど、いい仕事してくれるぞい！")
+    else:
+        bubble(f"ばっちりな食材が揃ってるぞい！最高だぞい！")
 
-    st.divider()
-
-    # ─── 調理手順セリフ（Groqあり→Groq / なし→テンプレ）───
-    st.write("**作り方（ざっくり）**")
+    # ─── 作り方パネル ───
+    panel_open()
+    section_label("作り方（ざっくり）")
     if cooking_message:
         st.write(cooking_message)
     else:
@@ -772,30 +1050,26 @@ def show_detail():
 
     st.divider()
 
-    # ─── 調味料・食べ方ヒント ───
     genre = recipe["ジャンル"]
-    st.write("**調味料はこんな感じだぞい**")
+    section_label("調味料のヒント")
     st.write(SEASONING_HINTS.get(genre, "手元にあるやつ入れたらいいぞい"))
-
-    st.write("**食べ方のヒントだぞい**")
-    # 主食系食材（ご飯・麺・パンなど）が既に入ってる料理は「ご飯と一緒に」を言わない
-    found_categories = st.session_state.get("found_categories", [])
-    recipe_categories = recipe.get("使える食材カテゴリ", [])
-    has_staple = "主食系" in recipe_categories  # レシピ自体に主食系が含まれるか
-    default_eating_hint = EATING_HINTS.get(genre, "好きなように食べるといいぞい")
-    if has_staple:
-        # 主食系が入ってる料理はそのまま食べるのを推奨
-        eating_hint = "これだけで立派な一食になるぞい！お好みで汁物を添えるといいぞい"
-    else:
-        eating_hint = default_eating_hint
-    st.write(eating_hint)
 
     st.divider()
 
-    st.write("よかったよかったぞい 🎉")
+    section_label("食べ方のヒント")
+    found_categories = st.session_state.get("found_categories", [])
+    recipe_categories = recipe.get("使える食材カテゴリ", [])
+    has_staple = "主食系" in recipe_categories
+    if has_staple:
+        eating_hint = "これだけで立派な一食になるぞい！お好みで汁物を添えるといいぞい"
+    else:
+        eating_hint = EATING_HINTS.get(genre, "好きなように食べるといいぞい")
+    st.write(eating_hint)
+    panel_close()
+
+    bubble("よかったよかったぞい 🎉")
 
     if st.button("次へ →", use_container_width=True, type="primary"):
-        # お見送り画面に進む前にセリフをGroqで生成
         with st.spinner("お見送りの言葉を考え中だぞい…"):
             farewell_message = groq_farewell(recipe)
         st.session_state.groq_farewell_message = farewell_message
@@ -807,30 +1081,28 @@ def show_detail():
 # 画面③：お見送り（成功版）
 # ────────────────────────────
 def show_farewell():
+    show_titlebar("お見送り")
+
     recipe_name = st.session_state.recipe_name
     farewell_message = st.session_state.groq_farewell_message
     cooking_message = st.session_state.groq_cooking_message
 
-    st.title("ゆるゆるコックさん 🍳")
-
-    # ─── お見送りセリフ（Groqあり→Groq / なし→テンプレ）───
+    # ─── お見送りセリフ（ふきだし）───
     if farewell_message:
-        st.write(farewell_message)
+        bubble(farewell_message)
     else:
-        st.write("また、何か作りたくなったら来るといいぞい 🍳")
+        bubble("また、何か作りたくなったら来るといいぞい 🍳")
 
-    st.divider()
-
-    # ─── シェア用テキスト（調理手順も含める）───
+    # ─── シェアパネル ───
+    panel_open()
+    section_label("作った料理をシェアするぞい 📋")
     if cooking_message:
         share_text = f"ゆるゆるコックさんに「{recipe_name}」の作り方を教えてもらったぞい\n\n【作り方】\n{cooking_message}"
     else:
         share_text = f"ゆるゆるコックさんに「{recipe_name}」の作り方を教えてもらったぞい"
 
-    st.write("**作った料理をシェアするぞい📋**")
     st.code(share_text, language=None)
 
-    # JavaScriptに渡すためにエスケープ処理
     share_text_js = share_text.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
     copy_js = f"""
         <button onclick="navigator.clipboard.writeText('{share_text_js}').then(() => {{
@@ -838,19 +1110,19 @@ def show_farewell():
             setTimeout(() => this.textContent = 'コピーするぞい 📋', 2000);
         }})"
         style="
-            background-color: #ff6b6b;
+            background-color: #e8a020;
             color: white;
             border: none;
             padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
             cursor: pointer;
             width: 100%;
         ">コピーするぞい 📋</button>
     """
     st.components.v1.html(copy_js, height=60)
-
-    st.divider()
+    panel_close()
 
     if st.button("トップに戻るぞい", use_container_width=True):
         for key in ["screen", "user_input", "temperature", "tools",
@@ -865,12 +1137,9 @@ def show_farewell():
 # 画面③：お見送り（救済版）
 # ────────────────────────────
 def show_farewell_rescue():
-    st.title("ゆるゆるコックさん 🍳")
+    show_titlebar("お見送り")
 
-    st.write("また、何か作りたくなったら来るといいぞい 🍳")
-    st.write("次は何かおいしいもの見つかるといいぞい！")
-
-    st.divider()
+    bubble("また、何か作りたくなったら来るといいぞい 🍳\n次は何かおいしいもの見つかるといいぞい！")
 
     if st.button("トップに戻るぞい", use_container_width=True):
         for key in ["screen", "user_input", "temperature", "tools",
