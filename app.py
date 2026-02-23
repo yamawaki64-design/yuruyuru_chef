@@ -143,23 +143,40 @@ def apply_styles():
         margin-top: 0.2rem;
     }}
 
+    /* ── スピナー（ローディング）枠を透明に ── */
+    [data-testid="stSpinner"] > div,
+    [data-testid="stSpinnerContainer"],
+    div[class*="stSpinner"] {{
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }}
+    /* スピナーのテキスト色 */
+    [data-testid="stSpinner"] p,
+    [data-testid="stSpinner"] span {{
+        color: #7a4f10 !important;
+    }}
+
+    /* ── ローディング全体の白背景を消す ── */
+    .stStatusWidget, [data-testid="stStatusWidget"] {{
+        background: transparent !important;
+    }}
+
     /* ── st.container(border=True) のパネルスタイル上書き ── */
-    /* Streamlitのcontainerはネストが深いので複数セレクタで対応 */
+    /* stLayoutWrapperがborderコンテナの実体 */
     [data-testid="stVerticalBlockBorderWrapper"] {{
         background: rgba(255, 255, 255, 0.84) !important;
         border: 1px solid rgba(232,201,122,0.7) !important;
         border-radius: 12px !important;
         box-shadow: 0 2px 10px rgba(160,120,30,0.10) !important;
     }}
-    [data-testid="stVerticalBlockBorderWrapper"] > div {{
+    [data-testid="stVerticalBlockBorderWrapper"] > div,
+    [data-testid="stVerticalBlockBorderWrapper"] > div > div {{
         background: transparent !important;
     }}
-    /* emotion cacheクラスに直接当てるフォールバック */
-    div[data-testid="stVerticalBlock"] + div[data-testid="stVerticalBlockBorderWrapper"],
-    div[class*="stVerticalBlockBorderWrapper"] {{
+    /* stLayoutWrapper内の直接の子borderも対象 */
+    [data-testid="stLayoutWrapper"] [data-testid="stVerticalBlockBorderWrapper"] {{
         background: rgba(255, 255, 255, 0.84) !important;
-        border: 1px solid rgba(232,201,122,0.7) !important;
-        border-radius: 12px !important;
     }}
 
     /* ── コードブロック（シェアテキスト）を明るく ── */
@@ -272,12 +289,17 @@ def apply_styles():
 
 
 def show_titlebar(title: str):
-    """固定タイトルバーを表示する"""
+    """固定タイトルバーを表示する（ページ遷移時に先頭へスクロール）"""
     st.markdown(f"""
     <div class="yuru-titlebar">
         <span class="yuru-titlebar-icon">🍳</span>
         <span class="yuru-titlebar-text">{title}</span>
     </div>
+    <script>
+        window.scrollTo({{top: 0, behavior: 'instant'}});
+        // iframeの親ウィンドウにも送る（Streamlit Cloud対応）
+        try {{ window.parent.scrollTo({{top: 0, behavior: 'instant'}}); }} catch(e) {{}}
+    </script>
     """, unsafe_allow_html=True)
 
 
@@ -875,7 +897,7 @@ def show_top():
         )
 
         st.write("")
-        section_label("使える道具はあるかぞい？")
+        section_label("使える道具も知りたいぞい")
         col1, col2 = st.columns(2)
         with col1:
             has_stove = st.checkbox("コンロ")
@@ -888,6 +910,10 @@ def show_top():
     if has_microwave:
         tools.append("電子レンジ")
 
+    # ─── DB準備（ボタンの上でローディング表示）───
+    # @cache_resourceなので初回のみ実際に構築、2回目以降は即返る
+    recipe_col, ingredient_col = get_collections()
+
     button_disabled = not user_input.strip()
     if st.button(
         "コックさんに相談するぞい 🍳",
@@ -895,7 +921,7 @@ def show_top():
         type="primary",
         disabled=button_disabled,
     ):
-        recipe_col, ingredient_col = get_collections()
+        # recipe_col, ingredient_col はボタン上で取得済み（@cache_resourceで使い回し）
 
         # ─── Groqで食材を正規化 ───
         with st.spinner("食材を解析中だぞい…"):
