@@ -1060,15 +1060,15 @@ def show_analyze():
             bar_color = "#8bc34a"
         elif match_rate >= 50:
             face = "🙂"
-            face_comment = "まあまあいけるぞい"
+            face_comment = "やりくり上手だぞい！"
             bar_color = "#e8a020"
         elif match_rate >= 30:
             face = "😅"
-            face_comment = "ちょっと無理くりだぞい…"
+            face_comment = "言い切れば大丈夫だぞい！"
             bar_color = "#ff9800"
         else:
             face = "😬"
-            face_comment = "ほぼ気合いだぞい！"
+            face_comment = "オリジナルを生み出したぞい！"
             bar_color = "#f44336"
 
         bar_width = max(match_rate, 4)  # 0%でも少し見える
