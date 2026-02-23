@@ -894,7 +894,7 @@ def show_top():
         section_label("今ある食材")
         user_input = st.text_area(
             "今ある食材を教えてほしいぞい",
-            placeholder="例：卵、ご飯、ねぎ、残り物のハム",
+            placeholder="例：卵、冷ご飯とネギ、コンビニのから揚げ弁当 など",
             height=110,
             label_visibility="collapsed",
         )
@@ -1048,10 +1048,60 @@ def show_analyze():
 
         st.write("")
         section_label("食材一致率")
-        st.progress(match_rate / 100)
-        st.caption(f"{match_rate}% ー 調理しようとした気持ちも込みだぞい！")
 
-    if st.button("詳しく教えてほしいぞい →", use_container_width=True, type="primary"):
+        # 一致率に応じてキャラクター表情・コメントを変える
+        if match_rate >= 90:
+            face = "🤩"
+            face_comment = "完璧だぞい！！"
+            bar_color = "#4caf50"
+        elif match_rate >= 70:
+            face = "😄"
+            face_comment = "かなりいい感じだぞい！"
+            bar_color = "#8bc34a"
+        elif match_rate >= 50:
+            face = "🙂"
+            face_comment = "まあまあいけるぞい"
+            bar_color = "#e8a020"
+        elif match_rate >= 30:
+            face = "😅"
+            face_comment = "ちょっと無理くりだぞい…"
+            bar_color = "#ff9800"
+        else:
+            face = "😬"
+            face_comment = "ほぼ気合いだぞい！"
+            bar_color = "#f44336"
+
+        bar_width = max(match_rate, 4)  # 0%でも少し見える
+        st.markdown(f"""
+        <div style="margin: 0.3rem 0 0.6rem 0;">
+            <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.4rem;">
+                <span style="font-size:2rem; line-height:1;">{face}</span>
+                <div>
+                    <span style="font-size:1.5rem; font-weight:bold; color:{bar_color};">{match_rate}%</span>
+                    <span style="font-size:0.85rem; color:#8a6020; margin-left:0.4rem;">{face_comment}</span>
+                </div>
+            </div>
+            <div style="
+                background: rgba(200,180,130,0.2);
+                border-radius: 999px;
+                height: 10px;
+                overflow: hidden;
+            ">
+                <div style="
+                    width: {bar_width}%;
+                    height: 100%;
+                    background: linear-gradient(90deg, {bar_color}cc, {bar_color});
+                    border-radius: 999px;
+                    transition: width 0.5s ease;
+                "></div>
+            </div>
+            <div style="font-size:0.78rem; color:#a08040; margin-top:0.3rem;">
+                調理しようとした気持ちも込みだぞい！
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    if st.button("作り方を説明するぞい →", use_container_width=True, type="primary"):
         with st.spinner("作り方を考え中だぞい…"):
             cooking_message = groq_cooking_steps(recipe, st.session_state.get("groq_normalized_words", []))
         st.session_state.groq_cooking_message = cooking_message
@@ -1147,7 +1197,7 @@ def show_detail():
             eating_hint = EATING_HINTS.get(genre, "好きなように食べるといいぞい")
         st.write(eating_hint)
 
-    bubble("よかったよかったぞい 🎉")
+    bubble("よかったよかった。これでおなかいっぱいになるぞい 🎉")
 
     if st.button("次へ →", use_container_width=True, type="primary"):
         with st.spinner("お見送りの言葉を考え中だぞい…"):
