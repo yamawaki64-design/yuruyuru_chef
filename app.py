@@ -39,17 +39,26 @@ def apply_styles():
 
     st.markdown(f"""
     <style>
-    /* ── リセット・背景 ── */
+    /* ── ライトモード強制（ダークモード無効化） ── */
+    :root {{
+        color-scheme: light !important;
+    }}
+    html, body, [data-testid="stAppViewContainer"], .stApp {{
+        color-scheme: light !important;
+    }}
+
+    /* ── 背景 ── */
     .stApp {{
         background-image: {bg_css};
         background-size: cover;
         background-attachment: fixed;
         background-position: center;
+        background-color: #fdf6e3 !important;
     }}
 
-    /* ── Streamlitデフォルトのヘッダー余白を詰める ── */
-    #root > div:first-child {{
-        padding-top: 0 !important;
+    /* ── Streamlit組み込みヘッダー（ハンバーガーメニューバー）を隠す ── */
+    header[data-testid="stHeader"] {{
+        display: none !important;
     }}
 
     /* ── メインコンテンツをタイトルバー分下げる ── */
@@ -65,8 +74,9 @@ def apply_styles():
         left: 0;
         width: 100%;
         z-index: 9999;
-        background: rgba(255, 248, 225, 0.92);
+        background: rgba(255, 248, 225, 0.95);
         backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         border-bottom: 2px solid #e8c97a;
         padding: 0.45rem 1.2rem;
         display: flex;
@@ -81,30 +91,19 @@ def apply_styles():
     .yuru-titlebar-text {{
         font-size: 1rem;
         font-weight: bold;
-        color: #7a4f10;
+        color: #7a4f10 !important;
         letter-spacing: 0.04em;
-    }}
-
-    /* ── コンテンツパネル（書類感） ── */
-    .yuru-panel {{
-        background: rgba(255, 255, 255, 0.82);
-        border-radius: 12px;
-        padding: 1.1rem 1.3rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 2px 10px rgba(160,120,30,0.10);
-        border: 1px solid rgba(232,201,122,0.5);
-        color: #3d2600;
     }}
 
     /* ── ふきだし（コックさんセリフ） ── */
     .yuru-bubble {{
-        background: #fff8e1;
+        background: #fff8e1 !important;
         border: 2px solid #e8c97a;
         border-radius: 16px 16px 16px 4px;
-        padding: 0.9rem 1.1rem;
+        padding: 0.9rem 1.1rem 0.9rem 1.3rem;
         margin-bottom: 1rem;
         position: relative;
-        color: #5c3d0e;
+        color: #5c3d0e !important;
         font-size: 1rem;
         line-height: 1.7;
         box-shadow: 0 2px 8px rgba(180,140,40,0.10);
@@ -121,18 +120,18 @@ def apply_styles():
     .yuru-section-label {{
         font-size: 0.78rem;
         font-weight: bold;
-        color: #a0700a;
+        color: #a0700a !important;
         letter-spacing: 0.08em;
-        text-transform: uppercase;
         margin-bottom: 0.3rem;
         padding-left: 0.1rem;
+        display: block;
     }}
 
     /* ── 料理名ビッグテキスト ── */
     .yuru-recipe-name {{
         font-size: 1.35rem;
         font-weight: bold;
-        color: #5c3d0e;
+        color: #5c3d0e !important;
         line-height: 1.5;
         margin: 0.3rem 0 0.2rem 0;
     }}
@@ -140,19 +139,46 @@ def apply_styles():
     /* ── 道具注記 ── */
     .yuru-tool-note {{
         font-size: 0.85rem;
-        color: #c0732a;
+        color: #c0732a !important;
         margin-top: 0.2rem;
     }}
 
-    /* ── タイピングアニメーション ── */
-    .yuru-typing {{
-        display: inline-block;
-        overflow: hidden;
-        white-space: pre-wrap;
-        word-break: break-all;
-        color: #5c3d0e;
-        font-size: 1rem;
-        line-height: 1.7;
+    /* ── st.container(border=True) のパネルスタイル上書き ── */
+    [data-testid="stVerticalBlockBorderWrapper"] > div {{
+        background: rgba(255, 255, 255, 0.84) !important;
+        border: 1px solid rgba(232,201,122,0.7) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 10px rgba(160,120,30,0.10) !important;
+    }}
+
+    /* ── 全テキスト要素の文字色（ダークモード上書き） ── */
+    .stApp p, .stApp span, .stApp div,
+    .stMarkdown, .stMarkdown p,
+    [data-testid="stText"],
+    [data-testid="stMarkdownContainer"] p {{
+        color: #3d2600 !important;
+    }}
+
+    /* ── ラジオ・チェックボックス ── */
+    .stRadio label, .stRadio span,
+    .stCheckbox label, .stCheckbox span {{
+        color: #5c3d0e !important;
+    }}
+    .stRadio [data-testid="stWidgetLabel"] p,
+    .stCheckbox [data-testid="stWidgetLabel"] p {{
+        color: #5c3d0e !important;
+    }}
+
+    /* ── テキストエリア ── */
+    .stTextArea textarea {{
+        background: rgba(255,255,255,0.90) !important;
+        border: 1.5px solid #d4a84b !important;
+        border-radius: 8px !important;
+        color: #3d2600 !important;
+    }}
+    .stTextArea textarea::placeholder {{
+        color: #b08040 !important;
+        opacity: 1 !important;
     }}
 
     /* ── ボタン系 ── */
@@ -168,13 +194,13 @@ def apply_styles():
         border-color: #cf8c18 !important;
     }}
     .stButton > button:not([kind="primary"]) {{
-        background-color: rgba(255,255,255,0.75) !important;
+        background-color: rgba(255,255,255,0.80) !important;
         border: 1.5px solid #d4a84b !important;
         color: #7a4f10 !important;
         border-radius: 10px !important;
     }}
 
-    /* ── Streamlit標準h1/h2/h3を非表示（タイトルバーで代替） ── */
+    /* ── Streamlit標準h1を非表示（タイトルバーで代替） ── */
     h1 {{ display: none !important; }}
 
     /* ── プログレスバー色 ── */
@@ -182,15 +208,9 @@ def apply_styles():
         background-color: #e8a020 !important;
     }}
 
-    /* ── テキストエリア・ラジオ・チェックボックス ── */
-    .stTextArea textarea {{
-        background: rgba(255,255,255,0.85) !important;
-        border: 1.5px solid #d4a84b !important;
-        border-radius: 8px !important;
-        color: #3d2600 !important;
-    }}
-    .stRadio label, .stCheckbox label {{
-        color: #5c3d0e !important;
+    /* ── caption ── */
+    .stCaptionContainer p, [data-testid="stCaptionContainer"] p {{
+        color: #8a6020 !important;
     }}
 
     /* ── divider ── */
@@ -215,9 +235,6 @@ def apply_styles():
             font-size: 0.93rem;
             padding: 0.75rem 0.9rem;
         }}
-        .yuru-panel {{
-            padding: 0.85rem 0.95rem;
-        }}
         .yuru-recipe-name {{
             font-size: 1.15rem;
         }}
@@ -241,24 +258,16 @@ def show_titlebar(title: str):
 
 def bubble(text: str):
     """コックさんのふきだしセリフを表示する"""
-    # XSS対策：改行を<br>に変換しつつそのまま表示（Groq出力なので信頼済み）
     safe_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
     st.markdown(f'<div class="yuru-bubble">{safe_text}</div>', unsafe_allow_html=True)
 
 
-def panel_open():
-    """書類パネルを開く"""
-    st.markdown('<div class="yuru-panel">', unsafe_allow_html=True)
-
-
-def panel_close():
-    """書類パネルを閉じる"""
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
 def section_label(text: str):
-    """パネル内のセクション見出し"""
-    st.markdown(f'<div class="yuru-section-label">{text}</div>', unsafe_allow_html=True)
+    """パネル内のセクション見出し（st.container内で使う）"""
+    st.markdown(f'<span class="yuru-section-label">{text}</span>', unsafe_allow_html=True)
+
+
+# panel_open / panel_close は廃止。各画面で with st.container(border=True): を使う。
 
 
 def typing_animation(text: str, speed_ms: int = 30):
@@ -821,33 +830,32 @@ def show_top():
 
     bubble("手元の食材を教えてくれたら、何か作れるか考えるぞい！")
 
-    panel_open()
-    section_label("今ある食材")
-    user_input = st.text_area(
-        "今ある食材を教えてほしいぞい",
-        placeholder="例：卵、ご飯、ねぎ、残り物のハム",
-        height=110,
-        label_visibility="collapsed",
-    )
+    with st.container(border=True):
+        section_label("今ある食材")
+        user_input = st.text_area(
+            "今ある食材を教えてほしいぞい",
+            placeholder="例：卵、ご飯、ねぎ、残り物のハム",
+            height=110,
+            label_visibility="collapsed",
+        )
 
-    st.write("")
-    section_label("温度はどうするぞい？")
-    temperature = st.radio(
-        label="温度",
-        options=["あったかいのがいい", "どっちでもいい"],
-        index=1,
-        label_visibility="collapsed",
-        horizontal=True,
-    )
+        st.write("")
+        section_label("温度はどうするぞい？")
+        temperature = st.radio(
+            label="温度",
+            options=["あったかいのがいい", "どっちでもいい"],
+            index=1,
+            label_visibility="collapsed",
+            horizontal=True,
+        )
 
-    st.write("")
-    section_label("使える道具はあるかぞい？")
-    col1, col2 = st.columns(2)
-    with col1:
-        has_stove = st.checkbox("コンロ")
-    with col2:
-        has_microwave = st.checkbox("電子レンジ")
-    panel_close()
+        st.write("")
+        section_label("使える道具はあるかぞい？")
+        col1, col2 = st.columns(2)
+        with col1:
+            has_stove = st.checkbox("コンロ")
+        with col2:
+            has_microwave = st.checkbox("電子レンジ")
 
     tools = []
     if has_stove:
@@ -960,19 +968,18 @@ def show_analyze():
         bubble(f"「{found_names}」があるんだぞい。ちょっと考えてみるぞい…")
 
     # ─── 命名＋一致率パネル ───
-    panel_open()
-    section_label("おすすめメニュー")
-    st.markdown(f'<div class="yuru-recipe-name">✨ {recipe_name}が作れそうだぞい！</div>', unsafe_allow_html=True)
-    if recipe.get("道具なし"):
-        st.markdown('<div class="yuru-tool-note">⚠️ 加熱器具がないぞい。誰かにレンチンとかさせてもらうんだぞい。生はダメだぞい！</div>', unsafe_allow_html=True)
-    elif recipe.get("レンジ代用"):
-        st.markdown('<div class="yuru-tool-note">💡 レンジでなんとかするぞい！</div>', unsafe_allow_html=True)
+    with st.container(border=True):
+        section_label("おすすめメニュー")
+        st.markdown(f'<div class="yuru-recipe-name">✨ {recipe_name}が作れそうだぞい！</div>', unsafe_allow_html=True)
+        if recipe.get("道具なし"):
+            st.markdown('<div class="yuru-tool-note">⚠️ 加熱器具がないぞい。誰かにレンチンとかさせてもらうんだぞい。生はダメだぞい！</div>', unsafe_allow_html=True)
+        elif recipe.get("レンジ代用"):
+            st.markdown('<div class="yuru-tool-note">💡 レンジでなんとかするぞい！</div>', unsafe_allow_html=True)
 
-    st.write("")
-    section_label("食材一致率")
-    st.progress(match_rate / 100)
-    st.caption(f"{match_rate}% ー 調理しようとした気持ちも込みだぞい！")
-    panel_close()
+        st.write("")
+        section_label("食材一致率")
+        st.progress(match_rate / 100)
+        st.caption(f"{match_rate}% ー 調理しようとした気持ちも込みだぞい！")
 
     if st.button("詳しく教えてほしいぞい →", use_container_width=True, type="primary"):
         with st.spinner("作り方を考え中だぞい…"):
@@ -990,11 +997,10 @@ def show_analyze_rescue():
 
     bubble("うーん、いいのが思い浮かばなかったぞい。ごめんなさい。")
 
-    panel_open()
-    section_label("買い物アドバイスだぞい 💡")
-    advice = random.choice(SHOPPING_ADVICE)
-    st.write(advice)
-    panel_close()
+    with st.container(border=True):
+        section_label("買い物アドバイスだぞい 💡")
+        advice = random.choice(SHOPPING_ADVICE)
+        st.write(advice)
 
     if st.button("次へ →", use_container_width=True):
         st.session_state.screen = "farewell_rescue"
@@ -1038,34 +1044,33 @@ def show_detail():
         bubble(f"ばっちりな食材が揃ってるぞい！最高だぞい！")
 
     # ─── 作り方パネル ───
-    panel_open()
-    section_label("作り方（ざっくり）")
-    if cooking_message:
-        st.write(cooking_message)
-    else:
-        if recipe["加工手順"]:
-            steps_str = "、".join(recipe["加工手順"])
-            cooking = recipe["必要調理法"]
-            st.write(f"{steps_str}して、{cooking}したらできるぞい！")
+    with st.container(border=True):
+        section_label("作り方（ざっくり）")
+        if cooking_message:
+            st.write(cooking_message)
+        else:
+            if recipe["加工手順"]:
+                steps_str = "、".join(recipe["加工手順"])
+                cooking = recipe["必要調理法"]
+                st.write(f"{steps_str}して、{cooking}したらできるぞい！")
 
-    st.divider()
+        st.divider()
 
-    genre = recipe["ジャンル"]
-    section_label("調味料のヒント")
-    st.write(SEASONING_HINTS.get(genre, "手元にあるやつ入れたらいいぞい"))
+        genre = recipe["ジャンル"]
+        section_label("調味料のヒント")
+        st.write(SEASONING_HINTS.get(genre, "手元にあるやつ入れたらいいぞい"))
 
-    st.divider()
+        st.divider()
 
-    section_label("食べ方のヒント")
-    found_categories = st.session_state.get("found_categories", [])
-    recipe_categories = recipe.get("使える食材カテゴリ", [])
-    has_staple = "主食系" in recipe_categories
-    if has_staple:
-        eating_hint = "これだけで立派な一食になるぞい！お好みで汁物を添えるといいぞい"
-    else:
-        eating_hint = EATING_HINTS.get(genre, "好きなように食べるといいぞい")
-    st.write(eating_hint)
-    panel_close()
+        section_label("食べ方のヒント")
+        found_categories = st.session_state.get("found_categories", [])
+        recipe_categories = recipe.get("使える食材カテゴリ", [])
+        has_staple = "主食系" in recipe_categories
+        if has_staple:
+            eating_hint = "これだけで立派な一食になるぞい！お好みで汁物を添えるといいぞい"
+        else:
+            eating_hint = EATING_HINTS.get(genre, "好きなように食べるといいぞい")
+        st.write(eating_hint)
 
     bubble("よかったよかったぞい 🎉")
 
@@ -1094,35 +1099,34 @@ def show_farewell():
         bubble("また、何か作りたくなったら来るといいぞい 🍳")
 
     # ─── シェアパネル ───
-    panel_open()
-    section_label("作った料理をシェアするぞい 📋")
-    if cooking_message:
-        share_text = f"ゆるゆるコックさんに「{recipe_name}」の作り方を教えてもらったぞい\n\n【作り方】\n{cooking_message}"
-    else:
-        share_text = f"ゆるゆるコックさんに「{recipe_name}」の作り方を教えてもらったぞい"
+    with st.container(border=True):
+        section_label("作った料理をシェアするぞい 📋")
+        if cooking_message:
+            share_text = f"ゆるゆるコックさんに「{recipe_name}」の作り方を教えてもらったぞい\n\n【作り方】\n{cooking_message}"
+        else:
+            share_text = f"ゆるゆるコックさんに「{recipe_name}」の作り方を教えてもらったぞい"
 
-    st.code(share_text, language=None)
+        st.code(share_text, language=None)
 
-    share_text_js = share_text.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
-    copy_js = f"""
-        <button onclick="navigator.clipboard.writeText('{share_text_js}').then(() => {{
-            this.textContent = 'コピーできたぞい ✅';
-            setTimeout(() => this.textContent = 'コピーするぞい 📋', 2000);
-        }})"
-        style="
-            background-color: #e8a020;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-        ">コピーするぞい 📋</button>
-    """
-    st.components.v1.html(copy_js, height=60)
-    panel_close()
+        share_text_js = share_text.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
+        copy_js = f"""
+            <button onclick="navigator.clipboard.writeText('{share_text_js}').then(() => {{
+                this.textContent = 'コピーできたぞい ✅';
+                setTimeout(() => this.textContent = 'コピーするぞい 📋', 2000);
+            }})"
+            style="
+                background-color: #e8a020;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 10px;
+                font-size: 15px;
+                font-weight: bold;
+                cursor: pointer;
+                width: 100%;
+            ">コピーするぞい 📋</button>
+        """
+        st.components.v1.html(copy_js, height=60)
 
     if st.button("トップに戻るぞい", use_container_width=True):
         for key in ["screen", "user_input", "temperature", "tools",
