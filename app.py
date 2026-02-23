@@ -289,18 +289,30 @@ def apply_styles():
 
 
 def show_titlebar(title: str):
-    """固定タイトルバーを表示する（ページ遷移時に先頭へスクロール）"""
+    """固定タイトルバーを表示する"""
     st.markdown(f"""
     <div class="yuru-titlebar">
         <span class="yuru-titlebar-icon">🍳</span>
         <span class="yuru-titlebar-text">{title}</span>
     </div>
-    <script>
-        window.scrollTo({{top: 0, behavior: 'instant'}});
-        // iframeの親ウィンドウにも送る（Streamlit Cloud対応）
-        try {{ window.parent.scrollTo({{top: 0, behavior: 'instant'}}); }} catch(e) {{}}
-    </script>
     """, unsafe_allow_html=True)
+    # iframe内のスクロールをトップに戻す（Streamlit Cloud対応）
+    st.components.v1.html("""
+    <script>
+        // 自分自身（iframe内）をスクロール
+        window.scrollTo({top: 0, behavior: 'instant'});
+        // Streamlitのメインコンテナを探してスクロール
+        try {
+            const main = window.parent.document.querySelector('[data-testid="stAppViewBlockContainer"]');
+            if (main) main.scrollTop = 0;
+            const appView = window.parent.document.querySelector('.main');
+            if (appView) appView.scrollTop = 0;
+            // ページ全体
+            window.parent.document.documentElement.scrollTop = 0;
+            window.parent.document.body.scrollTop = 0;
+        } catch(e) {}
+    </script>
+    """, height=0)
 
 
 def bubble(text: str):
@@ -449,7 +461,7 @@ messageは「ゆるゆるコックさん」というキャラクターのセリ�
         message = data.get("message", "")
         return ingredients, message
     except Exception:
-        return [], ""
+        return [], "groq_error"  # エラー時はフラグとして"groq_error"を返す
 
 
 # ────────────────────────────
@@ -863,6 +875,7 @@ def init_session():
         "groq_analyze_message": "",    # ① 食材解析セリフ（Groq）
         "groq_cooking_message": "",    # ② 調理手順セリフ（Groq）
         "groq_farewell_message": "",   # ③ お見送りセリフ（Groq）
+        "groq_error": False,           # Groqエラーフラグ
     }
     for key, val in defaults.items():
         if key not in st.session_state:
@@ -910,9 +923,14 @@ def show_top():
     if has_microwave:
         tools.append("電子レンジ")
 
-    # ─── DB準備（ボタンの上でローディング表示）───
-    # @cache_resourceなので初回のみ実際に構築、2回目以降は即返る
-    recipe_col, ingredient_col = get_collections()
+    # ─── DB準備（初回のみspinnerを表示、2回目以降は即返る）───
+    _db_ready = "db_initialized" in st.session_state
+    if not _db_ready:
+        with st.spinner("レシピDBを準備中だぞい…（初回だけ少し時間がかかるぞい）"):
+            recipe_col, ingredient_col = get_collections()
+        st.session_state.db_initialized = True
+    else:
+        recipe_col, ingredient_col = get_collections()
 
     button_disabled = not user_input.strip()
     if st.button(
@@ -980,8 +998,9 @@ def show_top():
         st.session_state.tools = tools
         st.session_state.found_ingredients = found_ingredients
         st.session_state.found_categories = found_categories
-        st.session_state.groq_normalized_words = normalized_words  # Groq正規化リストを保存
+        st.session_state.groq_normalized_words = normalized_words
         st.session_state.groq_analyze_message = analyze_message
+        st.session_state.groq_error = (analyze_message == "groq_error")  # エラーフラグ
 
         if recipes:
             top_recipes = recipes[:3]
@@ -1044,9 +1063,14 @@ def show_analyze():
 # 画面②-a：解析＋命名（救済版）
 # ────────────────────────────
 def show_analyze_rescue():
-    show_titlebar("降参だぞい")
+    groq_error = st.session_state.get("groq_error", False)
 
-    bubble("うーん、いいのが思い浮かばなかったぞい。ごめんなさい。")
+    if groq_error:
+        show_titlebar("ちょっと待ってほしいぞい")
+        bubble("うーん、ちょっと頭が混乱してるぞい。\nすこし待ってから、もう一回試してほしいぞい！🙏")
+    else:
+        show_titlebar("降参だぞい")
+        bubble("うーん、その食材からはいいのが思い浮かばなかったぞい。\n買い物のアドバイスもするぞい！")
 
     with st.container(border=True):
         section_label("買い物アドバイスだぞい 💡")
@@ -1200,7 +1224,8 @@ def show_farewell():
         for key in ["screen", "user_input", "temperature", "tools",
                     "found_ingredients", "found_categories",
                     "selected_recipe", "recipe_name", "match_rate",
-                    "groq_analyze_message", "groq_cooking_message", "groq_farewell_message"]:
+                    "groq_analyze_message", "groq_cooking_message", "groq_farewell_message",
+                    "groq_error"]:
             del st.session_state[key]
         st.rerun()
 
@@ -1217,7 +1242,8 @@ def show_farewell_rescue():
         for key in ["screen", "user_input", "temperature", "tools",
                     "found_ingredients", "found_categories",
                     "selected_recipe", "recipe_name", "match_rate",
-                    "groq_analyze_message", "groq_cooking_message", "groq_farewell_message"]:
+                    "groq_analyze_message", "groq_cooking_message", "groq_farewell_message",
+                    "groq_error"]:
             del st.session_state[key]
         st.rerun()
 
