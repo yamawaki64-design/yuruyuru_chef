@@ -1124,16 +1124,33 @@ def show_farewell():
         bubble("また、何か作りたくなったら来るといいぞい 🍳")
 
     # ─── シェアパネル ───
+    APP_URL = "https://yuruyuruchef.streamlit.app/"
     with st.container(border=True):
         section_label("作った料理をシェアするぞい 📋")
         if cooking_message:
-            share_text = f"ゆるゆるコックさんに「{recipe_name}」の作り方を教えてもらったぞい\n\n【作り方】\n{cooking_message}"
+            share_text = f"ゆるゆるコックさんに「{recipe_name}」の作り方を教えてもらったぞい\n\n【作り方】\n{cooking_message}\n\n🍳 {APP_URL}"
         else:
-            share_text = f"ゆるゆるコックさんに「{recipe_name}」の作り方を教えてもらったぞい"
+            share_text = f"ゆるゆるコックさんに「{recipe_name}」の作り方を教えてもらったぞい\n\n🍳 {APP_URL}"
 
-        st.code(share_text, language=None)
+        # st.codeの代わりにHTMLで折り返し対応のプレビューボックスを表示
+        safe_preview = share_text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+        st.markdown(f"""
+        <div style="
+            background: rgba(255,248,225,0.95);
+            border: 1px solid #e8c97a;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.88rem;
+            color: #3d2600;
+            line-height: 1.7;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            margin-bottom: 0.5rem;
+        ">{safe_preview}</div>
+        """, unsafe_allow_html=True)
 
-        share_text_js = share_text.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
+        share_text_js = share_text.replace("\\", "\\\\").replace("'", "\\'").replace("`", "\\`").replace("\n", "\\n")
         copy_js = f"""
             <button onclick="navigator.clipboard.writeText('{share_text_js}').then(() => {{
                 this.textContent = 'コピーできたぞい ✅';
