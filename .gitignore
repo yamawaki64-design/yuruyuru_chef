@@ -1,0 +1,13 @@
+# venv（仮想環境）
+venv/
+# APIキー関連（Streamlit Community CloudのSecretsに設定してるはずだけど念のため）
+.env
+# Python
+__pycache__/
+*.pyc
+# ベクトルDB
+chroma_db/
+# Secrets（超重要）
+.streamlit/secrets.toml
+# VSCode （F5でデバッグするときに必要）
+.vscode/
