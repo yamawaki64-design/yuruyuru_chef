@@ -888,19 +888,19 @@ def init_session():
 def show_top():
     show_titlebar("ゆるゆるコックさん")
 
-    bubble("手元の食材を教えてくれたら、何か作れるか考えるぞい！")
+    bubble("持ってるもの教えてくれたら、何が作れそうか考えるぞい！")
 
     with st.container(border=True):
-        section_label("今ある食材")
+        section_label("今ある食べ物")
         user_input = st.text_area(
-            "今ある食材を教えてほしいぞい",
+            "使える食べ物を教えてほしいぞい",
             placeholder="例：卵、冷ご飯とネギ、コンビニのから揚げ弁当 など",
             height=110,
             label_visibility="collapsed",
         )
 
         st.write("")
-        section_label("温度はどうするぞい？")
+        section_label("あったかいのだけから探すか選べるぞい")
         temperature = st.radio(
             label="温度",
             options=["あったかいのがいい", "どっちでもいい"],
@@ -1164,7 +1164,7 @@ def show_detail():
         bubble(f"本物は{missing_str}が入るらしいけど、これもきっとおいしいぞい！")
     elif substitutes:
         sub_str = "と".join(substitutes)
-        bubble(f"{sub_str}は{recipe['name']}には入らないやつだけど、いい仕事してくれるぞい！")
+        bubble(f"{sub_str}は{recipe['name']}でも、いい味だしてくれるはずだぞい！")
     else:
         bubble(f"ばっちりな食材が揃ってるぞい！最高だぞい！")
 
