@@ -434,6 +434,8 @@ def groq_normalize_ingredients(user_input: str) -> tuple[list[str], str]:
 - 修飾語を除去して食材名だけにする（例：残り物のハム→ハム）
 - 日本語の一般的な食材名に統一する
 - 食材ではないもの（調理法・量・状態など）は除外する
+- 料理名・メニュー名は食材に分解する（例：牛丼→牛肉・玉ねぎ・ご飯、から揚げ弁当→鶏肉・ご飯、ビッグマック→牛肉・パン・チーズ・野菜）
+- コンビニ弁当・ファストフード・外食メニューなども同様に含まれる食材に分解する
 - パン類（食パン・トースト・ロールパン・バゲットなど）は「パン」に統一する
 - ご飯・冷ご飯・白米・米などは「ご飯」に統一する
 - うどん・そば・ラーメン・パスタなど麺類は「〇〇」とそのまま正規化するが、総称で入力された場合は「麺」にする
@@ -490,7 +492,14 @@ def groq_cooking_steps(recipe: dict, user_input_words: list) -> str:
         user_categories = {name: ingredient_map.get(name, []) for name in user_names}
 
         # 代替候補（本物にない食材）
-        substitutes = [n for n in user_names if n not in real_ingredients_list]
+        # 主食系（ご飯・パン・麺類など）は他カテゴリの代替にはならないので除外する
+        # カテゴリ未登録（ingredient_dbにない）食材も除外する
+        substitutes = [
+            n for n in user_names
+            if n not in real_ingredients_list
+            and "主食系" not in ingredient_map.get(n, [])
+            and len(ingredient_map.get(n, [])) > 0
+        ]
 
         mapping = {}
         used_substitutes = set()
