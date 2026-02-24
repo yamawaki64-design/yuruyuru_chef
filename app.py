@@ -434,6 +434,9 @@ def groq_normalize_ingredients(user_input: str) -> tuple[list[str], str]:
 - 修飾語を除去して食材名だけにする（例：残り物のハム→ハム）
 - 日本語の一般的な食材名に統一する
 - 食材ではないもの（調理法・量・状態など）は除外する
+- パン類（食パン・トースト・ロールパン・バゲットなど）は「パン」に統一する
+- ご飯・冷ご飯・白米・米などは「ご飯」に統一する
+- うどん・そば・ラーメン・パスタなど麺類は「〇〇」とそのまま正規化するが、総称で入力された場合は「麺」にする
 
 返すJSONの形式（他のテキストは一切含めないこと）：
 {{
@@ -442,7 +445,8 @@ def groq_normalize_ingredients(user_input: str) -> tuple[list[str], str]:
 }}
 
 messageは「ゆるゆるコックさん」というキャラクターのセリフで、語尾は「〜ぞい」「〜だぞい」を使い、食材名を入れて元気よく書いてください。
-食材が1つだけのときは「〇〇があるんだぞい！」のように単体で話し、「と」で繋げないでください。"""
+食材が1つだけのときは「〇〇があるんだぞい！」のように単体で話し、「と」で繋げないでください。
+必ず日本語のみで出力してください。"""
 
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -522,22 +526,33 @@ def groq_cooking_steps(recipe: dict, user_input_words: list) -> str:
         cooking_method = recipe["必要調理法"]
         genre = recipe["ジャンル"]
 
+        # 加工手順の文字列をPython側で事前に置換する（Groqに任せると揺れるため）
+        # 長い食材名から先に置換して部分一致の誤爆を防ぐ
+        replaced_steps = list(steps)
+        sorted_mapping = sorted(mapping.items(), key=lambda x: -len(x[0]))
+        for i, step in enumerate(replaced_steps):
+            for real, user_name in sorted_mapping:
+                display_name = user_name.replace("（代替）", "")
+                if display_name != real:
+                    replaced_steps[i] = replaced_steps[i].replace(real, display_name)
+
         prompt = f"""あなたは「ゆるゆるコックさん」というキャラクターです。
 語尾は「〜ぞい」「〜だぞい」「〜するぞい」を使い、全力肯定でやさしく話します。
+必ず日本語のみで出力してください。他の言語（英語・韓国語・中国語など）を混ぜてはいけません。
 
-以下の料理の作り方を、食材マッピングに基づいてユーザーの持っている食材名で話してください。
+以下の料理の作り方を、すでに食材名を置き換えた加工手順をベースにして話してください。
 
 料理名：{recipe['name']}
 ジャンル：{genre}
-加工手順：{json.dumps(steps, ensure_ascii=False)}
+加工手順（置換済み）：{json.dumps(replaced_steps, ensure_ascii=False)}
 調理法：{cooking_method}
-食材マッピング（本物→ユーザーの食材）：{json.dumps(mapping, ensure_ascii=False)}
 
 ルール：
-- 代替食材は「（代替）」を取り除いて自然に話す
+- 加工手順の食材名はそのまま使う（勝手に別の食材名に変えない）
 - 手順は2〜4文でざっくりまとめる
 - 「これはおいしくなるぞい！」など応援の言葉を最後に入れる
-- 200文字以内で簡潔に"""
+- 200文字以内で簡潔に
+- 日本語のみ使用すること"""
 
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -573,7 +588,7 @@ def groq_farewell(recipe: dict) -> str:
 
 上記を参考に、料理の魅力を伝えながら「またいつでも来てほしいぞい」という気持ちのお見送りセリフを100文字以内で書いてください。
 注意：これはまだ「作り方を提案した段階」です。「おいしかった」「食べた」などの過去形は使わず、「きっとおいしいぞい」「得意料理になるぞい」「また来てほしいぞい」のような未来・期待のニュアンスにしてください。
-セリフだけを返してください。"""
+セリフだけを返してください。必ず日本語のみで出力してください。"""
 
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -894,6 +909,7 @@ def show_top():
         section_label("今ある食べ物")
         user_input = st.text_area(
             "使える食べ物を教えてほしいぞい",
+            value=st.session_state.get("user_input", ""),
             placeholder="例：卵、冷ご飯とネギ、コンビニのから揚げ弁当 など",
             height=110,
             label_visibility="collapsed",
@@ -1009,7 +1025,7 @@ def show_top():
             st.session_state.selected_recipe = selected
             st.session_state.recipe_name = recipe_name
             st.session_state.match_rate = match_rate
-            st.session_state.last_recipes = [selected["name"]]
+            st.session_state.last_recipes = st.session_state.get("last_recipes", []) + [selected["name"]]
             st.session_state.screen = "analyze"
         else:
             st.session_state.selected_recipe = None
@@ -1223,6 +1239,8 @@ def show_farewell():
     else:
         bubble("また、何か作りたくなったら来るといいぞい 🍳")
 
+    st.info("💡 別の料理が良かったら、「トップに戻るぞい」で同じ食材のまま別のメニューを考えるぞい！")
+
     # ─── シェアパネル ───
     APP_URL = "https://yuruyuruchef.streamlit.app/"
     with st.container(border=True):
@@ -1270,13 +1288,33 @@ def show_farewell():
         """
         st.components.v1.html(copy_js, height=60)
 
+    st.markdown("""
+    <div style="
+        background: rgba(255,248,225,0.85);
+        border: 1px solid #e8c97a;
+        border-radius: 8px;
+        padding: 0.7rem 1rem;
+        font-size: 0.82rem;
+        color: #7a5c20;
+        line-height: 1.7;
+        margin: 0.8rem 0;
+    ">
+        🍳 <b>ゆるゆるコックさん</b>は「ありものでなんとかする」専門ぞい。<br>
+        ちゃんとしたレシピが見たいときは
+        <a href="https://cookpad.com" target="_blank" style="color:#c07020; font-weight:bold;">クックパッド</a>や
+        <a href="https://delishkitchen.tv" target="_blank" style="color:#c07020; font-weight:bold;">デリッシュキッチン</a>
+        で検索するといいぞい！
+    </div>
+    """, unsafe_allow_html=True)
+
     if st.button("トップに戻るぞい", use_container_width=True):
-        for key in ["screen", "user_input", "temperature", "tools",
+        for key in ["screen", "temperature", "tools",
                     "found_ingredients", "found_categories",
                     "selected_recipe", "recipe_name", "match_rate",
                     "groq_analyze_message", "groq_cooking_message", "groq_farewell_message",
                     "groq_error"]:
-            del st.session_state[key]
+            if key in st.session_state:
+                del st.session_state[key]
         st.rerun()
 
 
@@ -1288,13 +1326,33 @@ def show_farewell_rescue():
 
     bubble("また、何か作りたくなったら来るといいぞい 🍳\n次は何かおいしいもの見つかるといいぞい！")
 
+    st.markdown("""
+    <div style="
+        background: rgba(255,248,225,0.85);
+        border: 1px solid #e8c97a;
+        border-radius: 8px;
+        padding: 0.7rem 1rem;
+        font-size: 0.82rem;
+        color: #7a5c20;
+        line-height: 1.7;
+        margin: 0.8rem 0;
+    ">
+        🍳 <b>ゆるゆるコックさん</b>は「ありものでなんとかする」専門ぞい。<br>
+        ちゃんとしたレシピが見たいときは
+        <a href="https://cookpad.com" target="_blank" style="color:#c07020; font-weight:bold;">クックパッド</a>や
+        <a href="https://delishkitchen.tv" target="_blank" style="color:#c07020; font-weight:bold;">デリッシュキッチン</a>
+        で検索するといいぞい！
+    </div>
+    """, unsafe_allow_html=True)
+
     if st.button("トップに戻るぞい", use_container_width=True):
-        for key in ["screen", "user_input", "temperature", "tools",
+        for key in ["screen", "temperature", "tools",
                     "found_ingredients", "found_categories",
                     "selected_recipe", "recipe_name", "match_rate",
                     "groq_analyze_message", "groq_cooking_message", "groq_farewell_message",
                     "groq_error"]:
-            del st.session_state[key]
+            if key in st.session_state:
+                del st.session_state[key]
         st.rerun()
 
 
