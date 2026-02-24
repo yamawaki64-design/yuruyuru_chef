@@ -1248,7 +1248,7 @@ def show_farewell():
     else:
         bubble("また、何か作りたくなったら来るといいぞい 🍳")
 
-    st.info("💡 別の料理が良かったら、「トップに戻るぞい」で同じ食材のまま別のメニューを考えるぞい！")
+    st.info("💡 「トップに戻るぞい」で同じ食材のまま別のメニューを相談できるぞい！")
 
     # ─── シェアパネル ───
     APP_URL = "https://yuruyuruchef.streamlit.app/"
@@ -1308,8 +1308,8 @@ def show_farewell():
         line-height: 1.7;
         margin: 0.8rem 0;
     ">
-        🍳 <b>ゆるゆるコックさん</b>は「ありものでなんとかする」専門ぞい。<br>
-        ちゃんとしたレシピが見たいときは
+        🍳 <b>ゆるゆるコックさん</b>は「ありもので何とかする」ことに全力すぎる傾向があるぞい。<br>
+        「そういうのではなくて」ってときは
         <a href="https://cookpad.com" target="_blank" style="color:#c07020; font-weight:bold;">クックパッド</a>や
         <a href="https://delishkitchen.tv" target="_blank" style="color:#c07020; font-weight:bold;">デリッシュキッチン</a>
         で検索するといいぞい！
