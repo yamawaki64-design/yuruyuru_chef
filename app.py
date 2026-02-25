@@ -542,8 +542,19 @@ def groq_cooking_steps(recipe: dict, user_input_words: list) -> str:
         for i, step in enumerate(replaced_steps):
             for real, user_name in sorted_mapping:
                 display_name = user_name.replace("（代替）", "")
-                if display_name != real:
-                    replaced_steps[i] = replaced_steps[i].replace(real, display_name)
+                # ★修正：完全一致食材（display_name == real）も含めて置換する
+                #   （以前は display_name != real の場合のみ置換していたため、
+                #     ユーザーが持っている食材が手順テキストに明示されていても
+                #     置換されず「具材」などの抽象表現が残ってしまう問題があった）
+                replaced_steps[i] = replaced_steps[i].replace(real, display_name)
+
+        # ユーザーが持っている食材を「必ず言及」リストとしてプロンプトに渡す
+        # 主食系は調理手順の主役になりやすいので含め、未登録食材は除外する
+        must_mention = [
+            n for n in user_names
+            if len(ingredient_map.get(n, [])) > 0  # ingredient_dbに登録済みのもの
+        ]
+        must_mention_str = "・".join(must_mention) if must_mention else "（なし）"
 
         prompt = f"""あなたは「ゆるゆるコックさん」というキャラクターです。
 語尾は「〜ぞい」「〜だぞい」「〜するぞい」を使い、全力肯定でやさしく話します。
@@ -555,9 +566,12 @@ def groq_cooking_steps(recipe: dict, user_input_words: list) -> str:
 ジャンル：{genre}
 加工手順（置換済み）：{json.dumps(replaced_steps, ensure_ascii=False)}
 調理法：{cooking_method}
+ユーザーが持っている食材：{must_mention_str}
 
 ルール：
 - 加工手順の食材名はそのまま使う（勝手に別の食材名に変えない）
+- 「ユーザーが持っている食材」に挙げた食材名を、セリフの中で必ず1回以上使うこと
+- 「具材」「全材料」「材料」などの曖昧な表現は使わず、具体的な食材名で話すこと
 - 手順は2〜4文でざっくりまとめる
 - 「これはおいしくなるぞい！」など応援の言葉を最後に入れる
 - 200文字以内で簡潔に
