@@ -439,6 +439,8 @@ def groq_normalize_ingredients(user_input: str) -> tuple[list[str], str]:
 - パン類（食パン・トースト・ロールパン・バゲットなど）は「パン」に統一する
 - ご飯・冷ご飯・白米・米などは「ご飯」に統一する
 - うどん・そば・ラーメン・パスタなど麺類は「〇〇」とそのまま正規化するが、総称で入力された場合は「麺」にする
+- 缶詰は「〇〇缶」の形に統一する（例：ツナ→ツナ缶、シーチキン→ツナ缶、サバ→サバ缶、イワシ→イワシ缶）
+- ひき肉は種類を明示する（例：ミンチ→豚ひき肉、合いびき→合挽き肉）
 
 返すJSONの形式（他のテキストは一切含めないこと）：
 {{
@@ -483,7 +485,7 @@ def groq_cooking_steps(recipe: dict, user_input_words: list) -> str:
         client = get_groq_client()
 
         # 食材マッピングを作る（本物の食材 → ユーザーが持っている食材）
-        # カテゴリが一致する食材を優先して代替に割り当てる
+        # 優先順位：① 完全一致 → ② 同カテゴリ代替 → ③ 主食系同士代替 → ④ カテゴリ不問フォールバック
         real_ingredients_list = recipe["本物の食材"]  # 順序を保持するためlistで扱う
         user_names = user_input_words  # Groq正規化リストを使う
         ingredient_map = get_ingredient_map()  # 食材名→カテゴリの辞書
@@ -491,13 +493,20 @@ def groq_cooking_steps(recipe: dict, user_input_words: list) -> str:
         # ユーザー食材のカテゴリを取得
         user_categories = {name: ingredient_map.get(name, []) for name in user_names}
 
-        # 代替候補（本物にない食材）
-        # 主食系（ご飯・パン・麺類など）は他カテゴリの代替にはならないので除外する
-        # カテゴリ未登録（ingredient_dbにない）食材も除外する
-        substitutes = [
+        # 代替候補を2種類に分けて管理する
+        # ・non_staple_substitutes: 主食系以外の代替候補（肉・野菜・魚など）
+        # ・staple_substitutes: 主食系同士の代替候補（パスタ→マカロニ など）
+        # カテゴリ未登録食材はどちらからも除外する
+        non_staple_substitutes = [
             n for n in user_names
             if n not in real_ingredients_list
             and "主食系" not in ingredient_map.get(n, [])
+            and len(ingredient_map.get(n, [])) > 0
+        ]
+        staple_substitutes = [
+            n for n in user_names
+            if n not in real_ingredients_list
+            and "主食系" in ingredient_map.get(n, [])
             and len(ingredient_map.get(n, [])) > 0
         ]
 
@@ -506,25 +515,35 @@ def groq_cooking_steps(recipe: dict, user_input_words: list) -> str:
 
         for real in real_ingredients_list:
             if real in user_names:
-                mapping[real] = real  # 完全一致
+                # ① 完全一致
+                mapping[real] = real
             else:
-                # 本物食材のカテゴリを取得
                 real_cats = set(ingredient_map.get(real, []))
-                # カテゴリが一致する代替食材を優先して探す
                 best = None
-                for sub in substitutes:
+
+                # ② 同カテゴリ代替（主食系以外の候補から探す）
+                for sub in non_staple_substitutes:
                     if sub in used_substitutes:
                         continue
                     sub_cats = set(user_categories.get(sub, []))
-                    if real_cats & sub_cats:  # カテゴリが1つでも一致
+                    if real_cats & sub_cats:
                         best = sub
                         break
-                if best is None:
-                    # カテゴリ一致なし → 未使用の代替食材を順番に割り当て
-                    for sub in substitutes:
+
+                # ③ 主食系同士の代替（本物食材が主食系のときだけ）
+                if best is None and "主食系" in real_cats:
+                    for sub in staple_substitutes:
                         if sub not in used_substitutes:
                             best = sub
                             break
+
+                # ④ カテゴリ不問フォールバック（未割り当ての非主食系食材を順番に割り当て）
+                if best is None:
+                    for sub in non_staple_substitutes:
+                        if sub not in used_substitutes:
+                            best = sub
+                            break
+
                 if best:
                     mapping[real] = f"{best}（代替）"
                     used_substitutes.add(best)
@@ -560,18 +579,17 @@ def groq_cooking_steps(recipe: dict, user_input_words: list) -> str:
 語尾は「〜ぞい」「〜だぞい」「〜するぞい」を使い、全力肯定でやさしく話します。
 必ず日本語のみで出力してください。他の言語（英語・韓国語・中国語など）を混ぜてはいけません。
 
-以下の料理の作り方を、すでに食材名を置き換えた加工手順をベースにして話してください。
+以下のありもの料理の作り方を、加工手順をベースにして話してください。
 
-料理名：{recipe['name']}
 ジャンル：{genre}
-加工手順（置換済み）：{json.dumps(replaced_steps, ensure_ascii=False)}
+加工手順：{json.dumps(replaced_steps, ensure_ascii=False)}
 調理法：{cooking_method}
-ユーザーが持っている食材：{must_mention_str}
+使う食材：{must_mention_str}
 
-ルール：
-- 加工手順の食材名はそのまま使う（勝手に別の食材名に変えない）
-- 「ユーザーが持っている食材」に挙げた食材名を、セリフの中で必ず1回以上使うこと
-- 「具材」「全材料」「材料」などの曖昧な表現は使わず、具体的な食材名で話すこと
+【絶対に守るルール】
+- 加工手順に書かれた食材名を1文字も変えてはいけない。書いてある通りに使うこと
+- 「使う食材」を全てセリフの中で1回以上使うこと
+- 「具材」「全材料」「材料」などの曖昧な表現は使わず、食材名を具体的に書くこと
 - 手順は2〜4文でざっくりまとめる
 - 「これはおいしくなるぞい！」など応援の言葉を最後に入れる
 - 200文字以内で簡潔に
