@@ -1057,9 +1057,14 @@ def show_top():
         st.session_state.found_categories = found_categories
         st.session_state.groq_normalized_words = normalized_words
         st.session_state.groq_analyze_message = analyze_message
-        st.session_state.groq_error = (analyze_message == "groq_error")  # エラーフラグ
+        is_groq_error = (analyze_message == "groq_error")
+        st.session_state.groq_error = is_groq_error
 
-        if recipes:
+        # Groqエラー時は必ず救済画面へ（レシピが見つかっても通常画面に進まない）
+        if is_groq_error:
+            st.session_state.selected_recipe = None
+            st.session_state.screen = "analyze_rescue"
+        elif recipes:
             top_recipes = recipes[:3]
             selected = random.choice(top_recipes)
             recipe_name, match_rate = build_recipe_name(selected, found_ingredients, user_input_words=normalized_words)
